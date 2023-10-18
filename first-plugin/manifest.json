@@ -1,0 +1,43 @@
+{
+    "name": "chrome-plugin-demo",
+    "version": "1.0",
+    "manifest_version": 3,
+    "description": "我是chrome-plugin-demo说明",
+    "permissions": [
+        "storage",
+        "contextMenus",
+        "notifications"
+    ],
+    "host_permissions": ["http://127.0.0.1/*"],
+    "action": {
+        "default_title": "红红火火恍恍惚惚", 
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "images/test.jpg",
+            "24": "images/test.jpg",
+            "32": "images/test.jpg"
+        }
+    },
+    "icons": {
+        "16": "images/test.jpg",
+        "48": "images/test.jpg",
+        "128": "images/test.jpg"
+    },
+    "background": {
+        "service_worker": "js/background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://www.baidu.com/*"],
+            "run_at": "document_end",
+            "js": ["js/content.js"],
+            "css": ["css/content.css"]
+        },
+        {
+            "matches": ["https://www.jd.com/*"],
+            "run_at": "document_end",
+            "js": ["js/content.js"],
+            "css": ["css/content.css"]
+        }
+    ]
+}
