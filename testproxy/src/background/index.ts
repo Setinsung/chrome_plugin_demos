@@ -62,7 +62,7 @@ class ProxyManager {
       }
     };
     chrome.proxy.settings.set({ value: config, scope: 'regular' }, function () { });
-    // console.log('chrome', chrome.proxy.settings);
+    console.log('chrome', config);
   }
 
   private static async createPacScript() {
