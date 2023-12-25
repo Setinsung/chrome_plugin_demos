@@ -1,10 +1,11 @@
 export { };
 import type { PlasmoMessaging } from "@plasmohq/messaging";
 import { Storage } from "@plasmohq/storage";
+import type { ProxyData } from "~types/proxyData";
 const storage = new Storage();
 
-const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
-  console.log(storage);
+const handler: PlasmoMessaging.MessageHandler<any, ProxyData> = async (req, res) => {
+  // console.log(storage);
   const siteListString = await storage.get("siteList");
   const serverString = await storage.get("server");
   console.log("siteList", siteListString);
@@ -15,8 +16,10 @@ const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
   var port = splitedServer[1];
   res.send({
     siteList,
-    host,
-    port
+    server: {
+      host,
+      port
+    }
   });
 };
 
