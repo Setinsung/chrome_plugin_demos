@@ -24,7 +24,7 @@ const DEFAULT_SERVER = {
   port: '7890',
 };
 
-const DEFAULT_PROXY_MODE: ProxyMode = "pac";
+const DEFAULT_PROXY_MODE: ProxyMode = "manual";
 
 export const setDefaultServer = async () => {
   await storage.set(StorageKeys.SERVER, DEFAULT_SERVER);
@@ -92,7 +92,7 @@ export const updateProxyMode = async (proxyMode: ProxyMode) => {
 const setChromeProxy = (mode: ProxyMode, pac?: string) => {
   let config: any;
   switch (mode) {
-    case "pac":
+    case "manual":
       console.log("pac mode");
       if (!pac) {
         console.error('PAC script is required for proxy mode.');
@@ -131,7 +131,7 @@ export const setDefaultPacProxy = async () => {
   const server = await setDefaultServer();
   const siteList = await setDefaultSiteList();
   const pacScript = generatePacScript({ siteList, server });
-  setChromeProxy("pac", pacScript);
+  setChromeProxy("manual", pacScript);
 };
 
 export const setPacProxy = async () => {
@@ -143,7 +143,7 @@ export const setPacProxy = async () => {
     siteList = await setDefaultSiteList();
   const pacScript = generatePacScript({ siteList, server });
   console.log("setPacProxy pacScript", pacScript);
-  setChromeProxy("pac", pacScript);
+  setChromeProxy("manual", pacScript);
 };
 
 
@@ -161,7 +161,7 @@ export const checkProxy = async (proxyModeInput?: ProxyMode) => {
   }
   console.log("checkProxy proxyMode", proxyMode);
   switch (proxyMode) {
-    case "pac":
+    case "manual":
       await setPacProxy();
       break;
     default:

@@ -1,10 +1,11 @@
 export interface ProxyData {
-  siteList: string[] | undefined;
-  server: ProxyServer | undefined;
+  siteList?: string[];
+  server?: ProxyServer;
+  proxyMode?: ProxyMode;
 }
 export interface ProxyServer {
   host: string;
   port: string;
 }
 
-export type ProxyMode = "pac" | "direct" | "system";
+export type ProxyMode = "manual" | "direct" | "system";
