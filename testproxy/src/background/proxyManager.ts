@@ -65,9 +65,11 @@ export const updateSiteList = async (siteListInput: string[]) => {
 
 const generatePacScript = (proxyData: ProxyData) => {
   let pacScriptList = ["var FindProxyForURL = function(url,host){if("];
+  console.log("generatePacScript proxyData.siteList", proxyData.siteList);
   const shExpMatchList = proxyData.siteList.map(site => `shExpMatch(url, '${site.replace('.', '\\.')}')`);
   pacScriptList.push(shExpMatchList.join("||"));
-  pacScriptList.push("){return 'PROXY " + proxyData.server + "';}return 'DIRECT';}");
+  const serverString = proxyData.server.host + ":" + proxyData.server.port;
+  pacScriptList.push("){return 'PROXY " + serverString + "';}return 'DIRECT';}");
   const pacScript = pacScriptList.join('');
   return pacScript;
 };
@@ -140,6 +142,7 @@ export const setPacProxy = async () => {
   if (!siteList)
     siteList = await setDefaultSiteList();
   const pacScript = generatePacScript({ siteList, server });
+  console.log("setPacProxy pacScript", pacScript);
   setChromeProxy("pac", pacScript);
 };
 
@@ -156,7 +159,7 @@ export const checkProxy = async (proxyModeInput?: ProxyMode) => {
     await updateProxyMode(proxyModeInput);
     proxyMode = proxyModeInput;
   }
-
+  console.log("checkProxy proxyMode", proxyMode);
   switch (proxyMode) {
     case "pac":
       await setPacProxy();

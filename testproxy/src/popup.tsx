@@ -38,8 +38,10 @@ const IndexPopup = () => {
   const updateProxyServer = async () => {
     // console.log(server);
     const resp = await sendToBackground({
-      name: "updateProxyServer",
-      body: server
+      name: "updateProxyData",
+      body: {
+        server
+      }
     });
     console.log("updateProxyServer resp", resp);
   };
