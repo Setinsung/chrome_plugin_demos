@@ -1,8 +1,8 @@
-import { type ReactNode, type MouseEventHandler, type FC, useState, useRef, useEffect } from 'react';
-import "~style.css";
+import { type ReactNode, type MouseEventHandler, type FC, useState, useRef, useEffect, type ChangeEvent } from 'react';
+import "../style.css";
 import logo from "data-base64:~assets/icon.png";
 import { sendToBackground } from "@plasmohq/messaging";
-import type { ProxyData } from '~types/proxyData';
+import type { ProxyData, ProxyMode } from '~types/proxyData';
 
 
 
@@ -13,7 +13,10 @@ const IndexPopup = () => {
   });
   const [urlList, setUrlList] = useState<string[]>([]);
 
+  const [proxyMode, setProxyMode] = useState<ProxyMode>("manual");
+
   useEffect(() => {
+    console.log("useEffect");
     getProxyData();
   }, []);
 
@@ -24,16 +27,19 @@ const IndexPopup = () => {
     console.log('proxyData', proxyData);
     setServer(proxyData.server);
     setUrlList(proxyData.siteList);
+    setProxyMode(proxyData.proxyMode);
   };
 
-  const switchProxy = async (checked: boolean) => {
-    console.log(checked);
+  const switchProxy = async (checkMode: ProxyMode) => {
+    console.log(checkMode);
+    setProxyMode(checkMode);
     const resp = await sendToBackground({
-      name: "getProxyData"
+      name: "switchProxyMode",
+      body: checkMode
     });
     console.log("resp", resp);
-    console.log("server", server);
   };
+
 
   const updateProxyServer = async () => {
     // console.log(server);
@@ -53,7 +59,7 @@ const IndexPopup = () => {
           <img src={logo} className="h-8 mr-1" />
           <h1 className="font-bold text-xl">MiniProxy</h1>
         </div>
-        <Switch onChange={switchProxy} />
+        <Switch onChange={switchProxy} checkMode={proxyMode} />
       </header>
       <div id="content" className="flex justify-between h-32">
         <div id="side" className=" w-[35%] h-28">
@@ -126,40 +132,43 @@ const ClickButton: FC<ClickButtonProps> = ({ onClick, children }) => {
 };
 
 interface SwitchProps {
-  onChange?: (checked: boolean) => void;
-  checked?: boolean;
+  onChange?: (checked: ProxyMode) => void;
+  checkMode?: ProxyMode;
 }
-const Switch: FC<SwitchProps> = ({ onChange, checked }) => {
-  const [isChecked, setIsChecked] = useState(checked || false);
-
-  const handleCheckboxChange = () => {
-    const newCheckedState = !isChecked;
-    setIsChecked(newCheckedState);
+const Switch: FC<SwitchProps> = ({ onChange, checkMode }) => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value as ProxyMode;
+    // 触发外部的onChange回调
     if (onChange) {
-      onChange(newCheckedState);
+      onChange(value);
     }
   };
+  let radioMapperList: { id: number, mode: ProxyMode; }[] = [{ id: 0, mode: "direct" }, { id: 1, mode: "system" }, { id: 2, mode: "manual" }];
   return (
-    <>
-      <label className='autoSaverSwitch relative inline-flex cursor-pointer select-none items-center'>
-        <input
-          type='checkbox'
-          name='autoSaver'
-          className='sr-only'
-          checked={isChecked}
-          onChange={handleCheckboxChange}
-        />
-        <span
-          className={`slider shadow-lg  hover:shadow-md flex h-[19.5px] w-[37.5px] items-center rounded-full p-[0.18rem] duration-200 ${isChecked ? 'bg-purple-500 hover:bg-purple-400' : 'bg-purple-100 hover:bg-purple-200'
-            }`}
-        >
-          <span
-            className={`dot h-[13.5px] w-[13.5px] rounded-full bg-white duration-200 ${isChecked ? 'translate-x-[1.12rem]' : ''
-              }`}
+    <div className="switch3 rounded-xl relative border-[1.2px] flex h-7 w-48">
+      {radioMapperList.map((item) => (
+        <div key={item.id} className="flex-1 flex rounded-xl">
+          <input
+            className="hidden cursor-pointer"
+            type="radio"
+            id={`switch3-radio${item.id + 1}`}
+            name="radio"
+            value={item.mode}
+            checked={checkMode === item.mode}
+            onChange={handleInputChange}
           />
-        </span>
-      </label>
-    </>
+          <label
+            className={`select-none transition-all duration-1000 z-10 flex-1 rounded-xl leading-7 text-center font-bold cursor-pointer ${checkMode === item.mode
+              ? `text-blue-500 ${checkMode === "direct" ? 'text-purple-500' : checkMode === "system" ? 'text-blue-500' : checkMode === "manual" ? 'text-green-500' : ''}`
+              : ''
+              }`}
+            htmlFor={`switch3-radio${item.id + 1}`}
+          >
+            {item.mode.toUpperCase()}
+          </label>
+        </div>
+      ))}
+    </div>
   );
 };
 
