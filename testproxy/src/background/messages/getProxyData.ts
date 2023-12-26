@@ -1,25 +1,17 @@
 export { };
 import type { PlasmoMessaging } from "@plasmohq/messaging";
-import { Storage } from "@plasmohq/storage";
+import { getServer, getSiteList } from "~background/proxyManager";
 import type { ProxyData } from "~types/proxyData";
-const storage = new Storage();
 
 const handler: PlasmoMessaging.MessageHandler<any, ProxyData> = async (req, res) => {
   // console.log(storage);
-  const siteListString = await storage.get("siteList");
-  const serverString = await storage.get("server");
-  console.log("siteList", siteListString);
-  console.log("serverString", serverString);
-  const siteList = JSON.parse(siteListString) as string[];
-  var splitedServer = serverString.split(":");
-  var host = splitedServer[0];
-  var port = splitedServer[1];
+  const siteList = await getSiteList();
+  const server = await getServer();
+  console.log("getProxyData siteList", siteList);
+  console.log("getProxyData server", server);
   res.send({
     siteList,
-    server: {
-      host,
-      port
-    }
+    server
   });
 };
 
