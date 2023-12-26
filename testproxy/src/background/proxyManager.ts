@@ -1,9 +1,9 @@
 import { Storage } from "@plasmohq/storage";
 import StorageKeys from "~constants/storageKeys";
-import type { ProxyData, ProxyServer } from "~types/proxyData";
+import type { ProxyData, ProxyMode, ProxyServer } from "~types/proxyData";
 const storage = new Storage();
 
-const defaultSiteList = [
+const DEFAULT_SITE_LIST = [
   '*amazon\.com*',
   '*facebook\.com*',
   '*facebook\.net*',
@@ -18,16 +18,17 @@ const defaultSiteList = [
   '*googleusercontent\.com*',
   '*google\.com*'
 ];
-const defaultServer = {
+
+const DEFAULT_SERVER = {
   host: '127.0.0.1',
   port: '7890',
 };
 
-const defaultIsProxy = true;
+const DEFAULT_PROXY_MODE: ProxyMode = "pac";
 
 export const setDefaultServer = async () => {
-  await storage.set(StorageKeys.SERVER, defaultServer);
-  return defaultServer;
+  await storage.set(StorageKeys.SERVER, DEFAULT_SERVER);
+  return DEFAULT_SERVER;
 };
 
 export const getServer = async (): Promise<ProxyServer | undefined> => {
@@ -46,8 +47,8 @@ export const updateServer = async (serverInput: ProxyServer) => {
 
 
 export const setDefaultSiteList = async () => {
-  await storage.set(StorageKeys.SITE_LIST, defaultSiteList);
-  return defaultSiteList;
+  await storage.set(StorageKeys.SITE_LIST, DEFAULT_SITE_LIST);
+  return DEFAULT_SITE_LIST;
 };
 
 export const getSiteList = async (): Promise<string[] | undefined> => {
@@ -62,36 +63,6 @@ export const updateSiteList = async (siteListInput: string[]) => {
 };
 
 
-// export const setDefaultProxyPacScript = async () => {
-//   const pacScript = generatePacScript({ siteList: defaultSiteList, server: defaultServer });
-//   await storage.set(StorageKeys.PAC_SCRIPT, pacScript);
-//   return pacScript;
-// };
-
-// export const initDirectProxyPacScript = async () => {
-//   const pacScript = "var FindProxyForUrl = function(url, host){return 'DIRECT';}";
-//   await storage.set(StorageKeys.PAC_SCRIPT_DIRECT, pacScript);
-//   return pacScript;
-// };
-
-// export const getDirectPacScript = async (): Promise<string | undefined> => {
-//   return await storage.get(StorageKeys.PAC_SCRIPT_DIRECT) as string;
-// };
-
-// export const getPacScript = async (): Promise<string | undefined> => {
-//   return await storage.get(StorageKeys.PAC_SCRIPT) as string;
-// };
-
-// export const updatePacScript = async () => {
-//   let server = await getServer();
-//   if (!server) return false;
-//   let siteList = await getSiteList();
-//   if (!siteList) return false;
-//   const pacScript = generatePacScript({ siteList, server });
-//   await storage.set(StorageKeys.PAC_SCRIPT, pacScript);
-//   return true;
-// };
-
 const generatePacScript = (proxyData: ProxyData) => {
   let pacScriptList = ["var FindProxyForURL = function(url,host){if("];
   const shExpMatchList = proxyData.siteList.map(site => `shExpMatch(url, '${site.replace('.', '\\.')}')`);
@@ -102,43 +73,66 @@ const generatePacScript = (proxyData: ProxyData) => {
 };
 
 
-export const setDefaultIsProxy = async () => {
-  await storage.set(StorageKeys.ISPROXY, defaultIsProxy);
-  return defaultIsProxy;
+export const setDefaultProxyMode = async () => {
+  await storage.set(StorageKeys.PROXY_MODE, DEFAULT_PROXY_MODE);
+  return DEFAULT_PROXY_MODE;
 };
 
-export const getIsProxy = async (): Promise<boolean | undefined> => {
-  return await storage.get(StorageKeys.ISPROXY) as boolean;
+export const getProxyMode = async (): Promise<ProxyMode | undefined> => {
+  return await storage.get(StorageKeys.PROXY_MODE) as ProxyMode;
 };
 
-export const switchIsProxy = async (isOpen: boolean) => {
-  if (isOpen)
-    await storage.set(StorageKeys.ISPROXY, true);
-  else
-    await storage.set(StorageKeys.ISPROXY, false);
+export const updateProxyMode = async (proxyMode: ProxyMode) => {
+  await storage.set(StorageKeys.PROXY_MODE, proxyMode);
 };
 
 
-export const setChromeProxy = (pac: string) => {
-  const config = {
-    mode: "pac_script",
-    pacScript: {
-      data: pac
-    }
-  };
+const setChromeProxy = (mode: ProxyMode, pac?: string) => {
+  let config: any;
+  switch (mode) {
+    case "pac":
+      console.log("pac mode");
+      if (!pac) {
+        console.error('PAC script is required for proxy mode.');
+        return;
+      }
+      config = {
+        mode: "pac_script",
+        pacScript: {
+          data: pac
+        }
+      };
+      break;
+    case "direct":
+      console.log("direct mode");
+      config = {
+        mode: "direct"
+      };
+      break;
+    case "system":
+      console.log("system mode");
+      config = {
+        mode: "system"
+      };
+      break;
+    default:
+      console.error('Invalid proxy mode specified.');
+      return;
+  }
+
   chrome.proxy.settings.set({ value: config, scope: 'regular' }, function () { });
 };
 
 
-export const initDefaultProxy = async () => {
-  await setDefaultIsProxy();
+export const setDefaultPacProxy = async () => {
+  await setDefaultProxyMode();
   const server = await setDefaultServer();
   const siteList = await setDefaultSiteList();
   const pacScript = generatePacScript({ siteList, server });
-  setChromeProxy(pacScript);
+  setChromeProxy("pac", pacScript);
 };
 
-export const initProxy = async () => {
+export const setPacProxy = async () => {
   let server = await getServer();
   if (!server)
     server = await setDefaultServer();
@@ -146,10 +140,29 @@ export const initProxy = async () => {
   if (!siteList)
     siteList = await setDefaultSiteList();
   const pacScript = generatePacScript({ siteList, server });
-  setChromeProxy(pacScript);
+  setChromeProxy("pac", pacScript);
 };
 
-export const directProxy = async () => {
-  const directPacScript = "var FindProxyForUrl = function(url, host){return 'DIRECT';}";
-  setChromeProxy(directPacScript);
+
+export const checkProxy = async (proxyModeInput?: ProxyMode) => {
+  let proxyMode: ProxyMode | undefined;
+  if (!proxyModeInput) {
+    proxyMode = await getProxyMode();
+    if (!proxyMode) {
+      await updateProxyMode(DEFAULT_PROXY_MODE);
+      proxyMode = DEFAULT_PROXY_MODE;
+    }
+  } else {
+    await updateProxyMode(proxyModeInput);
+    proxyMode = proxyModeInput;
+  }
+
+  switch (proxyMode) {
+    case "pac":
+      await setPacProxy();
+      break;
+    default:
+      setChromeProxy(proxyMode);
+      break;
+  }
 };
