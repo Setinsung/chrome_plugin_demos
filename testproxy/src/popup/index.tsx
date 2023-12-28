@@ -15,6 +15,8 @@ const IndexPopup = () => {
 
   const [proxyMode, setProxyMode] = useState<ProxyMode>("manual");
 
+  const [newSite, setNewSite] = useState<string>();
+
   useEffect(() => {
     console.log("useEffect");
     getProxyData();
@@ -61,54 +63,60 @@ const IndexPopup = () => {
         </div>
         <Switch onChange={switchProxy} checkMode={proxyMode} />
       </header>
-      <div id="content" className="flex justify-between h-32">
-        <div id="side" className=" w-[35%] h-28">
-          <h2 className="font-bold text-xs mb-1">站点列表</h2>
-          <div className="p-1 bg-purple-100 h-full rounded overflow-y-scroll shadow-md">
-            {
-              urlList.length === 0 ? (
-                <span>数据加载中...</span>
-              ) : (
-                <ul>
-                  {
-                    urlList.map(item => (
-                      <li key={item}>{item}</li>
-                    ))
-                  }
-                </ul>
-              )
-            }
-          </div>
-        </div>
-        <div className="w-[60%] flex flex-col justify-between" >
-          <div className="mb-3">
-            <h2 className="font-bold text-xs mb-1">代理url</h2>
-            <div className="p-1 bg-purple-100 shadow-md rounded flex justify-between items-center">
-              <div className="flex flex-col">
-                <div className="mb-1">
-                  <label htmlFor="ip" className='font-bold mr-1'>HOST:</label>
-                  <input value={server.host} onChange={e => setServer({ ...server, host: e.target.value })} id="ip" type="text" placeholder="127.0.0.1" className='text-xs py-[0.1rem] px-[0.25rem] w-[5.5rem] mr-1 rounded-full outline-none ' />
-                </div>
-                <div>
-                  <label htmlFor="port" className='font-bold mr-1'>PORT:</label>
-                  <input value={server.port} onChange={e => setServer({ ...server, port: e.target.value })} id="port" type="text" placeholder="8080" className='text-xs py-[0.1rem] px-[0.25rem] w-[5.5rem] rounded-full outline-none' />
+      {
+        proxyMode !== "direct" && proxyMode !== "system"
+        && (
+          <div id="content" className="flex justify-between h-32">
+            <div id="side" className=" w-[35%] h-28">
+              <h2 className="font-bold text-xs mb-1">站点列表</h2>
+              <div className="p-1 bg-purple-100 h-full rounded overflow-y-scroll shadow-md">
+                {
+                  urlList.length === 0 ? (
+                    <span>数据加载中...</span>
+                  ) : (
+                    <ul>
+                      {
+                        urlList.map(item => (
+                          <li key={item}>{item}</li>
+                        ))
+                      }
+                    </ul>
+                  )
+                }
+              </div>
+            </div>
+            <div className="w-[60%] flex flex-col justify-between" >
+              <div className="mb-3">
+                <h2 className="font-bold text-xs mb-1">代理url</h2>
+                <div className="p-1 bg-purple-100 shadow-md rounded flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <div className="mb-1">
+                      <label htmlFor="ip" className='font-bold mr-1'>HOST:</label>
+                      <input value={server.host} onChange={e => setServer({ ...server, host: e.target.value })} id="ip" type="text" placeholder="127.0.0.1" className='text-xs py-[0.1rem] px-[0.25rem] w-[5.5rem] mr-1 rounded-full outline-none ' />
+                    </div>
+                    <div>
+                      <label htmlFor="port" className='font-bold mr-1'>PORT:</label>
+                      <input value={server.port} onChange={e => setServer({ ...server, port: e.target.value })} id="port" type="text" placeholder="8080" className='text-xs py-[0.1rem] px-[0.25rem] w-[5.5rem] rounded-full outline-none' />
+                    </div>
+                  </div>
+                  <ClickButton onClick={updateProxyServer}>设置</ClickButton>
                 </div>
               </div>
-              <ClickButton onClick={updateProxyServer}>设置</ClickButton>
-            </div>
-          </div>
-          <div>
-            <h2 className="font-bold text-xs mb-1">站点添加</h2>
-            <div className="p-1 bg-purple-100 shadow-md rounded flex justify-between items-center">
               <div>
-                <label className='font-bold mr-1'>SITE:</label>
-                <input type="text" placeholder="google.com" className="text-xs py-[0.1rem] px-[0.25rem] w-[7.5rem] outline-none rounded-full" />
+                <h2 className="font-bold text-xs mb-1">站点添加</h2>
+                <div className="p-1 bg-purple-100 shadow-md rounded flex justify-between items-center">
+                  <div>
+                    <label className='font-bold mr-1'>SITE:</label>
+                    <input value={newSite} onChange={e => setNewSite(e.target.value)} type="text" placeholder="google.com" className="text-xs py-[0.1rem] px-[0.25rem] w-[7.5rem] outline-none rounded-full" />
+                  </div>
+                  <ClickButton>添加</ClickButton>
+                </div>
               </div>
-              <ClickButton>添加</ClickButton>
             </div>
           </div>
-        </div>
-      </div>
+        )
+      }
+
     </div>
   );
 };
