@@ -4,8 +4,6 @@ import logo from "data-base64:~assets/icon.png";
 import { sendToBackground } from "@plasmohq/messaging";
 import type { ProxyData, ProxyMode, ProxyServer } from '~types/proxyData';
 
-
-
 const IndexPopup = () => {
   const [server, setServer] = useState({
     host: "",
@@ -17,10 +15,79 @@ const IndexPopup = () => {
 
   const [newSite, setNewSite] = useState<string>("");
 
+  const [isConfigureProxy, setIsConfigureProxy] = useState<boolean>(true);
+
+  const [isListenErrReq, setIsListenErrReq] = useState<boolean>(true);
+
+  const [errReqUrlList, setErrReqUrlList] = useState<string[]>([]);
+
   useEffect(() => {
-    console.log("useEffect");
     getProxyData();
   }, []);
+
+  const onErrorOccurredListener = (details) => {
+    const userResponse = details.url;
+    console.log(userResponse);
+    setErrReqUrlList([...errReqUrlList, userResponse]);
+  };
+
+  if (!chrome.webRequest.onErrorOccurred.hasListener(onErrorOccurredListener)) {
+    chrome.webRequest.onErrorOccurred.addListener(onErrorOccurredListener, { urls: ["<all_urls>"] });
+  }
+
+  const switchChromeErrListener = (isOpen: boolean) => {
+    if (isOpen) {
+      // // 检查是否已经存在监听器
+      // if (!chrome.webRequest.onErrorOccurred.hasListener(onErrorOccurredListener)) {
+      //   chrome.webRequest.onErrorOccurred.addListener(onErrorOccurredListener, { urls: ["<all_urls>"] });
+      // }
+    } else {
+      // // 检查是否存在监听器，然后再移除
+      // if (chrome.webRequest.onErrorOccurred.hasListener(onErrorOccurredListener)) {
+      //   chrome.webRequest.onErrorOccurred.removeListener(onErrorOccurredListener);
+      // }
+      setErrReqUrlList([]);
+    }
+  };
+
+  // 刷新
+  const refreshTab = () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      var tabId = tabs[0].id;
+      chrome.tabs.reload(tabId);
+      chrome.runtime.reload();
+    });
+  };
+
+
+  const clickConfigureProxy = async () => {
+    const newBool = !isConfigureProxy;
+    const resp = await sendToBackground<ProxyData, boolean>({
+      name: "updateProxyData",
+      body: {
+        isConfigureProxy: newBool
+      }
+    });
+    setIsConfigureProxy(newBool);
+    if (!newBool) {
+      setIsListenErrReq(newBool);
+    }
+  };
+
+  const clickListenErrReq = async () => {
+    const newBool = !isListenErrReq;
+    // console.log('newBool', newBool);
+    const resp = await sendToBackground<ProxyData, boolean>({
+      name: "updateProxyData",
+      body: {
+        isListenErrReq: newBool
+      }
+    });
+    setIsListenErrReq(newBool);
+    switchChromeErrListener(newBool);
+  };
+
+
 
   const getProxyData = async () => {
     const proxyData = await sendToBackground<string, ProxyData>({
@@ -30,6 +97,13 @@ const IndexPopup = () => {
     setServer(proxyData.server);
     setUrlList(proxyData.siteList);
     setProxyMode(proxyData.proxyMode);
+    if (proxyData.isConfigureProxy !== undefined) {
+      setIsConfigureProxy(proxyData.isConfigureProxy);
+    }
+    if (proxyData.isListenErrReq !== undefined) {
+      setIsListenErrReq(proxyData.isListenErrReq);
+      switchChromeErrListener(proxyData.isListenErrReq);
+    }
   };
 
   const switchProxy = async (checkMode: ProxyMode) => {
@@ -39,7 +113,7 @@ const IndexPopup = () => {
       name: "switchProxyMode",
       body: checkMode
     });
-    console.log("resp", resp);
+    // console.log("resp", resp);
   };
 
 
@@ -51,7 +125,7 @@ const IndexPopup = () => {
         server
       }
     });
-    console.log("updateProxyServer resp", resp);
+    // console.log("updateProxyServer resp", resp);
     if (resp) await getProxyData();
   };
 
@@ -60,7 +134,7 @@ const IndexPopup = () => {
       name: "addNewProxySite",
       body: newSite
     });
-    console.log("addNewSite resp", resp);
+    // console.log("addNewSite resp", resp);
     if (resp) await getProxyData();
   };
 
@@ -71,10 +145,10 @@ const IndexPopup = () => {
     });
     console.log("deleteSite resp", resp);
     if (resp) await getProxyData();
-  }
+  };
 
   return (
-    <div className="h-55 w-96 p-2">
+    <div className="h-55 w-96 p-2 transition-all duration-1000">
       <header className="flex justify-between items-center mb-2">
         <div className="flex justify-center items-center">
           <img src={logo} className="h-8 mr-1" />
@@ -84,6 +158,23 @@ const IndexPopup = () => {
       </header>
       {
         proxyMode !== "direct" && proxyMode !== "system"
+        && (
+          <div className='w-full flex justify-end'>
+            {
+              isConfigureProxy
+              && (
+                <>
+                  <ClickButton onClick={clickListenErrReq}>监听请求</ClickButton>
+                  <span>&nbsp;&nbsp;&nbsp;</span>
+                </>
+              )
+            }
+            <ClickButton onClick={clickConfigureProxy}>配置代理</ClickButton>
+          </div>
+        )
+      }
+      {
+        isConfigureProxy
         && (
           <div id="content" className="flex justify-between h-32">
             <div id="side" className=" w-[35%] h-28">
@@ -109,7 +200,7 @@ const IndexPopup = () => {
             </div>
             <div className="w-[60%] flex flex-col justify-between" >
               <div className="mb-3">
-                <h2 className="font-bold text-xs mb-1">代理url</h2>
+                <h2 className="font-bold text-xs mb-1">代理URL</h2>
                 <div className="p-1 bg-purple-100 shadow-md rounded flex justify-between items-center">
                   <div className="flex flex-col">
                     <div className="mb-1">
@@ -138,7 +229,23 @@ const IndexPopup = () => {
           </div>
         )
       }
-
+      {
+        isConfigureProxy && isListenErrReq
+        && (
+          <div className='w-full mt-4'>
+            <h2 className="font-bold text-xs mb-1">请求失败URL列表</h2>
+            <div className="p-1 bg-purple-100 w-full h-36 rounded overflow-scroll shadow-md">
+              <ul>
+                {
+                  errReqUrlList.map((item, index) => (
+                    <li key={index}>{index}.&nbsp;{item}</li>
+                  ))
+                }
+              </ul>
+            </div>
+          </div>
+        )
+      }
     </div>
   );
 };

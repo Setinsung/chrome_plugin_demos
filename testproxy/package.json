@@ -33,7 +33,8 @@
       "https://*/*"
     ],
     "permissions": [
-      "proxy"
+      "proxy",
+      "webRequest"
     ]
   }
 }

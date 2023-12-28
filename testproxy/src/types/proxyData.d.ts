@@ -2,6 +2,8 @@ export interface ProxyData {
   siteList?: string[];
   server?: ProxyServer;
   proxyMode?: ProxyMode;
+  isListenErrReq?: boolean;
+  isConfigureProxy?: boolean;
 }
 export interface ProxyServer {
   host: string;

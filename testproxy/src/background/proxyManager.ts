@@ -96,7 +96,7 @@ export const deleteOneSite = async (siteInput: string) => {
 
 const generatePacScript = (proxyData: ProxyData) => {
   let pacScriptList = ["var FindProxyForURL = function(url,host){if("];
-  console.log("generatePacScript proxyData.siteList", proxyData.siteList);
+  // console.log("generatePacScript proxyData.siteList", proxyData.siteList);
   const shExpMatchList = proxyData.siteList.map(site => `shExpMatch(url, '${site.replace('.', '\\.')}')`);
   pacScriptList.push(shExpMatchList.join("||"));
   const serverString = proxyData.server.host + ":" + proxyData.server.port;
@@ -120,11 +120,39 @@ export const updateProxyMode = async (proxyMode: ProxyMode) => {
 };
 
 
+export const setDefaultIsListenErrReq = async () => {
+  await storage.set(StorageKeys.IS_LISTEN_ERR_REQ, false);
+  return false;
+};
+
+export const getIsListenErrReq = async (): Promise<boolean | undefined> => {
+  return await storage.get(StorageKeys.IS_LISTEN_ERR_REQ) as boolean;
+};
+
+export const updateIsListenErrReq = async (isListenErrReq: boolean) => {
+  await storage.set(StorageKeys.IS_LISTEN_ERR_REQ, isListenErrReq);
+};
+
+
+export const setDefaultIsConfigureProxy = async () => {
+  await storage.set(StorageKeys.IS_CONFIGURE_PROXY, false);
+  return false;
+};
+
+export const getIsConfigureProxy= async (): Promise<boolean | undefined> => {
+  return await storage.get(StorageKeys.IS_CONFIGURE_PROXY) as boolean;
+};
+
+export const updateIsConfigureProxy = async (isConfigureProxy: boolean) => {
+  await storage.set(StorageKeys.IS_CONFIGURE_PROXY, isConfigureProxy);
+};
+
+
 const setChromeProxy = (mode: ProxyMode, pac?: string) => {
   let config: any;
   switch (mode) {
     case "manual":
-      console.log("pac mode");
+      console.log("manual mode");
       if (!pac) {
         console.error('PAC script is required for proxy mode.');
         return;
@@ -159,6 +187,8 @@ const setChromeProxy = (mode: ProxyMode, pac?: string) => {
 
 export const setDefaultPacProxy = async () => {
   await setDefaultProxyMode();
+  await setDefaultIsConfigureProxy();
+  await setDefaultIsListenErrReq();
   const server = await setDefaultServer();
   const siteList = await setDefaultSiteList();
   const pacScript = generatePacScript({ siteList, server });
@@ -173,7 +203,6 @@ export const setPacProxy = async () => {
   if (!siteList)
     siteList = await setDefaultSiteList();
   const pacScript = generatePacScript({ siteList, server });
-  console.log("setPacProxy pacScript", pacScript);
   setChromeProxy("manual", pacScript);
 };
 
@@ -190,7 +219,6 @@ export const checkProxy = async (proxyModeInput?: ProxyMode) => {
     await updateProxyMode(proxyModeInput);
     proxyMode = proxyModeInput;
   }
-  console.log("checkProxy proxyMode", proxyMode);
   switch (proxyMode) {
     case "manual":
       await setPacProxy();
