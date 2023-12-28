@@ -62,6 +62,37 @@ export const updateSiteList = async (siteListInput: string[]) => {
   return true;
 };
 
+export const addOneSite = async (siteInput: string) => {
+  if (!siteInput)
+    return false;
+  let siteList = await getSiteList();
+  const siteIndex = siteList.findIndex((site) => site === siteInput);
+  if (siteIndex !== -1) return false;
+  const formattedSite = `*${siteInput}*`;
+  siteList = [...siteList, formattedSite];
+  await storage.set(StorageKeys.SITE_LIST, siteList);
+  return true;
+};
+
+
+export const deleteOneSite = async (siteInput: string) => {
+  if (!siteInput) {
+    return false;
+  }
+  try {
+    let siteList = await getSiteList();
+    const siteIndex = siteList.findIndex((site) => site === siteInput);
+    if (siteIndex === -1) return false;
+    siteList.splice(siteIndex, 1);
+    await storage.set(StorageKeys.SITE_LIST, siteList);
+    return true;
+  } catch (error) {
+    console.error('Error deleting site:', error);
+    return false;
+  }
+};
+
+
 
 const generatePacScript = (proxyData: ProxyData) => {
   let pacScriptList = ["var FindProxyForURL = function(url,host){if("];

@@ -2,7 +2,7 @@ import { type ReactNode, type MouseEventHandler, type FC, useState, useRef, useE
 import "../style.css";
 import logo from "data-base64:~assets/icon.png";
 import { sendToBackground } from "@plasmohq/messaging";
-import type { ProxyData, ProxyMode } from '~types/proxyData';
+import type { ProxyData, ProxyMode, ProxyServer } from '~types/proxyData';
 
 
 
@@ -15,7 +15,7 @@ const IndexPopup = () => {
 
   const [proxyMode, setProxyMode] = useState<ProxyMode>("manual");
 
-  const [newSite, setNewSite] = useState<string>();
+  const [newSite, setNewSite] = useState<string>("");
 
   useEffect(() => {
     console.log("useEffect");
@@ -45,13 +45,23 @@ const IndexPopup = () => {
 
   const updateProxyServer = async () => {
     // console.log(server);
-    const resp = await sendToBackground({
+    const resp = await sendToBackground<ProxyData, boolean>({
       name: "updateProxyData",
       body: {
         server
       }
     });
     console.log("updateProxyServer resp", resp);
+    if (resp) await getProxyData();
+  };
+
+  const addNewSite = async () => {
+    const resp = await sendToBackground<string, boolean>({
+      name: "addNewProxySite",
+      body: newSite
+    });
+    console.log("addNewSite resp", resp);
+    if (resp) await getProxyData();
   };
 
   return (
@@ -109,7 +119,7 @@ const IndexPopup = () => {
                     <label className='font-bold mr-1'>SITE:</label>
                     <input value={newSite} onChange={e => setNewSite(e.target.value)} type="text" placeholder="google.com" className="text-xs py-[0.1rem] px-[0.25rem] w-[7.5rem] outline-none rounded-full" />
                   </div>
-                  <ClickButton>添加</ClickButton>
+                  <ClickButton onClick={addNewSite}>添加</ClickButton>
                 </div>
               </div>
             </div>
