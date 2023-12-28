@@ -64,6 +64,15 @@ const IndexPopup = () => {
     if (resp) await getProxyData();
   };
 
+  const deleteSite = async (site: string) => {
+    const resp = await sendToBackground<string, boolean>({
+      name: "deleteProxySite",
+      body: site
+    });
+    console.log("deleteSite resp", resp);
+    if (resp) await getProxyData();
+  }
+
   return (
     <div className="h-55 w-96 p-2">
       <header className="flex justify-between items-center mb-2">
@@ -79,7 +88,7 @@ const IndexPopup = () => {
           <div id="content" className="flex justify-between h-32">
             <div id="side" className=" w-[35%] h-28">
               <h2 className="font-bold text-xs mb-1">站点列表</h2>
-              <div className="p-1 bg-purple-100 h-full rounded overflow-y-scroll shadow-md">
+              <div className="p-1 bg-purple-100 h-full rounded overflow-scroll shadow-md">
                 {
                   urlList.length === 0 ? (
                     <span>数据加载中...</span>
@@ -87,7 +96,10 @@ const IndexPopup = () => {
                     <ul>
                       {
                         urlList.map(item => (
-                          <li key={item}>{item}</li>
+                          <li className='w-40 flex justify-between items-center' key={item}>
+                            <span>{item}</span>
+                            <span onClick={() => deleteSite(item)} className='select-none text-center cursor-pointer text-gray-500 h-3 w-3 leading-3 rounded-full  bg-gray-300'>x</span>
+                          </li>
                         ))
                       }
                     </ul>
